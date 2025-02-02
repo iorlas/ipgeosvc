@@ -47,9 +47,10 @@ async def get_ip_location(
     request: Request,
     ip: str | None = None,
     real_ip: str = Header(None, alias="X-Real-IP"),
+    forwarded_for: str = Header(None, alias="x-forwarded-for"),
 ):
     if ip is None:
-        ip = real_ip or request.client.host
+        ip = real_ip or forwarded_for or request.client.host
 
     try:
         response = geoip_reader.city(ip)
@@ -74,6 +75,7 @@ async def get_ip_location(
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
 
 @app.get("/headers")
 async def get_headers(request: Request):
