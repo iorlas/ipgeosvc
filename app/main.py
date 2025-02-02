@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Header, Request
 from geoip2.database import Reader
 from geoip2.errors import AddressNotFoundError
 from starlette.middleware import Middleware
@@ -43,9 +43,13 @@ class GeoIPResponse(BaseModel):
 
 @app.get("/geo", response_model=GeoIPResponse, response_model_exclude_none=True)
 @app.get("/geo/{ip}", response_model=GeoIPResponse, response_model_exclude_none=True)
-async def get_ip_location(request: Request, ip: str | None = None):
+async def get_ip_location(
+    request: Request,
+    ip: str | None = None,
+    real_ip: str = Header(None, alias="X-Real-IP"),
+):
     if ip is None:
-        ip = request.client.host
+        ip = real_ip or request.client.host
 
     try:
         response = geoip_reader.city(ip)
@@ -70,3 +74,7 @@ async def get_ip_location(request: Request, ip: str | None = None):
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+@app.get("/headers")
+async def get_headers(request: Request):
+    return request.headers
